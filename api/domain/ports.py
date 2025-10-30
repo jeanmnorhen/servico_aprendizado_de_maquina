@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, List
 
 from .models import TaskTicket, TaskStatus
-from ..schemas import SpriteAnalysisResult # Import SpriteAnalysisResult
+
 
 from celery.result import AsyncResult
 
@@ -52,20 +52,3 @@ class ILlavaClient(ABC):
     def analyze_image(self, image_path: str, prompt: str, model: str = "llava") -> dict:
         pass
 
-class ISpriteCatalogService(ABC):
-    @abstractmethod
-    def add_sprite_metadata(self, sprite_metadata: SpriteAnalysisResult, image_path: str) -> None:
-        pass
-
-    @abstractmethod
-    def get_all_sprites_metadata(self) -> List[SpriteAnalysisResult]:
-        pass
-
-    @abstractmethod
-    def deactivate_sprite(self, image_path: str) -> None:
-        pass
-
-class IImagenClient(ABC):
-    @abstractmethod
-    def generate_image(self, prompt: str, aspect_ratio: Optional[str] = "1:1", person_generation: Optional[str] = "allow_adult") -> str:
-        pass
