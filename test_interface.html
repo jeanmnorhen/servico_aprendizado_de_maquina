@@ -181,3 +181,73 @@
 
 </body>
 </html>
+
+<hr style="margin: 24px 0;">
+
+<h2>Image Generation (Imagen)</h2>
+<form id="image-form">
+    <input type="text" id="image-prompt-input" placeholder="Enter image prompt..." autocomplete="off" style="width: 100%; padding: 12px; box-sizing: border-box;">
+    <button type="submit" id="image-submit-button" style="margin-top: 8px; width: 100%;">Generate Image</button>
+</form>
+
+<h3>Generated Image:</h3>
+<div id="image-display-area" class="response-area" style="text-align: center;">
+    <img id="generated-image" src="" alt="Generated image will appear here" style="max-width: 100%; border-radius: 6px;">
+</div>
+<div id="image-error-display" class="error-message"></div>
+
+
+<script>
+    // Image Generation Logic
+    const imageForm = document.getElementById("image-form");
+    const imageInput = document.getElementById("image-prompt-input");
+    const imageSubmitButton = document.getElementById("image-submit-button");
+    const generatedImage = document.getElementById("generated-image");
+    const imageErrorDisplay = document.getElementById("image-error-display");
+    const IMAGE_API_URL = "http://localhost:8000/api/ai/generate-image";
+
+    imageForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const prompt = imageInput.value.trim();
+        if (!prompt) return;
+
+        setImageLoading(true);
+
+        try {
+            const response = await fetch(IMAGE_API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-API-KEY": API_KEY // Re-use from text generation
+                },
+                body: JSON.stringify({ prompt: prompt })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || "An unknown error occurred.");
+            }
+
+            // The API returns a path like /generated_images/image.png
+            // We can use it directly as the src
+            generatedImage.src = data.image_path;
+            imageErrorDisplay.textContent = "";
+
+        } catch (error) {
+            console.error("Image Gen Error:", error);
+            imageErrorDisplay.textContent = `Error: ${error.message}`;
+        } finally {
+            setImageLoading(false);
+        }
+    });
+
+    function setImageLoading(isLoading) {
+        imageSubmitButton.disabled = isLoading;
+        imageSubmitButton.textContent = isLoading ? "Generating..." : "Generate Image";
+        if (isLoading) {
+            imageErrorDisplay.textContent = "";
+        }
+    }
+</script>
+

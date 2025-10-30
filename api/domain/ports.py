@@ -80,3 +80,10 @@ class ITextGenerator(ABC):
     def generate_text(self, prompt: str, model: str) -> str:
         pass
 
+
+class IImageGenerator(ABC):
+    @abstractmethod
+    def generate_image(self, prompt: str) -> str:
+        """Generates an image and returns the path to it."""
+        pass
+

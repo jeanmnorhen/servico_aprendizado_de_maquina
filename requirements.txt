@@ -22,3 +22,5 @@ supabase
 sqlalchemy
 psycopg2-binary
 pyngrok
+
+

@@ -221,3 +221,29 @@ async def get_task_status(
     use_case = GetTaskStatusUseCase(celery_client)
 
     return use_case.execute(task_id)
+
+from ..application.image_use_cases import GenerateImageUseCase
+from ..domain.ports import IImageGenerator
+from ..infrastructure.gemini_image_client import GeminiImageClient
+
+def get_image_generator() -> IImageGenerator:
+    return GeminiImageClient()
+
+class GenerateImageRequest(BaseModel):
+    prompt: str
+
+@router.post("/api/ai/generate-image", tags=["AI"])
+async def generate_image_endpoint(
+    request: GenerateImageRequest,
+    api_key: str = Depends(get_api_key),
+    image_generator: IImageGenerator = Depends(get_image_generator)
+):
+    """
+    Generates an image using the Vertex AI Imagen model.
+    """
+    use_case = GenerateImageUseCase(image_generator)
+    result = use_case.execute(request.prompt)
+    if result["status"] == "FAILURE":
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=result["error"])
+    return result
+

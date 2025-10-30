@@ -5,6 +5,8 @@ from .presentation import endpoints
 import os
 import uvicorn
 
+from fastapi.staticfiles import StaticFiles
+
 # --- Ngrok Tunnel (for local development) ---
 # In a production environment, you would not use Ngrok.
 # This allows exposing the local Docker container to a public URL for Vercel.
@@ -26,6 +28,9 @@ app = FastAPI(
     description="Um serviço para orquestrar modelos de IA e workers.",
     version="0.1.0"
 )
+
+# Mount static files directory for generated images
+app.mount("/generated_images", StaticFiles(directory="generated_images"), name="generated_images")
 
 app.include_router(endpoints.router)
 
