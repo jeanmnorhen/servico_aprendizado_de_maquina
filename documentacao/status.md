@@ -1,37 +1,23 @@
-##  Estado Atual do Projeto
+# Estado Atual do Projeto
 
-A análise do código-fonte revela que a funcionalidade principal de criação de animação assistida por IA está **implementada e funcional**. A estrutura do projeto é sólida, utilizando Next.js com uma arquitetura limpa e integração com Supabase para persistência de dados e `servico-ia-unificado` para a lógica de IA.
+A refatoração principal do serviço foi concluída. O projeto agora funciona como um backend de IA flexível, seguindo os princípios da Clean Architecture e focado em fornecer acesso a múltiplos modelos de linguagem.
 
-###  Funcionalidades Implementadas
+### Funcionalidades Implementadas
 
-*   **Interface do Editor:** A interface principal do editor de animação está criada, incluindo:
-    *   Um painel para listar e adicionar personagens (`CharacterPanel`).
-    *   Uma área de texto para o usuário inserir o roteiro da animação.
-    *   Um canvas (utilizando PixiJS) para visualizar a animação (`AnimationEditor`).
-    *   Uma linha do tempo para visualização e criação manual de keyframes (`Timeline`).
-*   **Comunicação com o Serviço de IA:**
-    *   O frontend envia o roteiro do usuário para o `servico-ia-unificado` através de uma server action (`processScript`).
-    *   A comunicação suporta **refinamento iterativo**, enviando o estado da animação atual de volta para a IA para ajustes.
-    *   O frontend consulta o status da tarefa de processamento (`getTaskResult`) e recebe o resultado.
-*   **Renderização da Animação:**
-    *   O componente `AnimationEditor` recebe a estrutura de dados `AnimationSceneDescription` gerada pela IA.
-    *   Ele renderiza os personagens e aplica as etapas de animação (`move`, `rotate`, `look_forward`, `walk_away`) de forma básica, utilizando GSAP para interpolação de movimentos.
-    *   Os resultados da IA são persistidos no Supabase, permitindo que a animação seja recarregada.
-    *   Caso não haja uma animação gerada pela IA, o editor é capaz de renderizar uma animação baseada em keyframes manuais salvos no banco de dados.
-*   **Persistência dos Resultados da IA:** A `AnimationSceneDescription` gerada pela IA é agora salva no banco de dados Supabase, incluindo personagens e keyframes, garantindo que a animação não seja perdida ao recarregar a página.
+*   **API Unificada:** Um único endpoint (`/api/ai/generate-text`) serve como gateway para geração de texto.
+*   **Seleção de Modelos:** A API aceita um parâmetro `model` que permite ao cliente escolher dinamicamente entre o Gemini ou qualquer modelo configurado no Ollama (ex: `codellama`, `gemma`).
+*   **Persistência de Conversas:** Cada interação (pergunta e resposta) é automaticamente salva em um banco de dados Postgres (Supabase) e associada a um `session_id` para rastreamento.
+*   **Arquitetura Limpa:** O código é organizado nas camadas de Domínio, Aplicação, Apresentação e Infraestrutura, promovendo baixo acoplamento e alta coesão.
+*   **Ambiente Dockerizado:** Todos os serviços (API, Ollama, Redis, Celery) são gerenciados via `docker-compose` para um ambiente de desenvolvimento consistente.
+*   **Túnel para Desenvolvimento:** Integração com Ngrok para expor a API local a um endereço público, facilitando o desenvolvimento de frontends.
+*   **Interface de Teste:** Um arquivo `test_interface.html` permite a interação direta com a API para testes rápidos.
 
-### Fluxo de Dados (Geração de Animação)
+### Fluxo de Dados (Geração de Texto)
 
-1.  O usuário insere um roteiro no `EditorClient.tsx`.
-2.  A ação `processScript` em `actions.ts` é chamada, enviando o roteiro para o endpoint `/api/ai/animation-script` do `servico-ia-unificado`.
-3.  O serviço de IA processa o roteiro e retorna um `task_id`.
-4.  O `EditorClient.tsx` utiliza a ação `getTaskResult` para consultar o status da tarefa.
-5.  Uma vez que a tarefa é concluída com sucesso, o serviço de IA retorna um objeto `AnimationSceneDescription`.
-6.  Este objeto é passado como propriedade para o componente `AnimationEditor.tsx`.
-7.  O `AnimationEditor.tsx` interpreta os dados e renderiza a cena e a animação no canvas do PixiJS.
-
-#Pontos Críticos da Implementação Atual
-
-*   **Componente Principal:** `EditorClient.tsx` orquestra a interação do usuário e o estado da interface.
-*   **Ponte com o Backend:** `actions.ts` gerencia a comunicação com o Supabase (para keyframes manuais) e com o `servico-ia-unificado`.
-*   **Renderizador:** `AnimationEditor.tsx` é responsável por toda a lógica de renderização com PixiJS.
+1.  Um cliente (ex: `test_interface.html`) envia uma requisição `POST` para `/api/ai/generate-text` com um `prompt` e um `model`.
+2.  O `GenerateTextUseCase` na camada de aplicação é invocado.
+3.  Ele solicita à `ModelFactory` o cliente de IA correto (`ITextGenerator`) com base no nome do modelo.
+4.  O cliente selecionado (ex: `GeminiClient` ou `OllamaClient`) envia o prompt para a respectiva API de IA.
+5.  Após receber a resposta da IA, o caso de uso cria um objeto `ChatHistory`.
+6.  O `PostgresChatRepository` é usado para salvar o objeto `ChatHistory` no banco de dados.
+7.  A resposta final e o `session_id` são retornados ao cliente.
