@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: unified_ai_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  unified_ai_api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: unified_ai_api_gateway
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads_data:/app/uploads
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+    depends_on:
+      - redis
+    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--log-level", "debug"]
+    restart: unless-stopped
+
+  unified_ai_text_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: unified_ai_text_worker
+    volumes:
+      - ./knowledge_base:/app/knowledge_base:ro # Mount the knowledge base as read-only
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - OLLAMA_API_URL=http://ollama:11434
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+    depends_on:
+      - redis
+    command: ["celery", "-A", "config.celery_config", "worker", "--loglevel=info", "-Q", "text_queue"]
+    restart: unless-stopped
+
+  unified_ai_celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: unified_ai_celery_beat
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - OLLAMA_API_URL=http://ollama:11434
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+    depends_on:
+      - redis
+      - unified_ai_text_worker # Beat depends on worker to ensure tasks are registered
+      - unified_ai_vision_worker # Beat also depends on vision worker
+    command: ["celery", "-A", "config.celery_config", "beat", "--loglevel=info"]
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama
+    container_name: unified_ai_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    entrypoint: ["ollama"]
+    command: ["serve"]
+    restart: unless-stopped
+
+  unified_ai_vision_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: unified_ai_vision_worker
+    volumes:
+      - uploads_data:/app/uploads
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - OLLAMA_API_URL=http://ollama:11434
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+    depends_on:
+      - redis
+      - ollama
+    command: ["celery", "-A", "config.celery_config", "worker", "--loglevel=info", "-Q", "vision_queue"]
+    restart: unless-stopped
+
+volumes:
+  uploads_data:
+  models_cache:
+  ollama_models:

@@ -1,0 +1,28 @@
+# Dockerfile.worker (Simplified for Ollama)
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install essential build tools if any C extensions need compilation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
+RUN pip install --upgrade pip
+
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application code
+COPY api /app/api
+COPY config /app/config
+COPY workers /app/workers
+
+# Print OLLAMA_API_URL during build phase
+RUN echo "OLLAMA_API_URL during build: $OLLAMA_API_URL"
+
+# Command to run the worker is defined in docker-compose.yml
