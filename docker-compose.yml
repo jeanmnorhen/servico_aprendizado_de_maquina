@@ -13,14 +13,8 @@ services:
       context: .
       dockerfile: Dockerfile.api
     container_name: unified_ai_api_gateway
-      - ENVIRONMENT=development
-    ports:
-      - "8000:8000"
-    volumes:
-      - uploads_data:/app/uploads
-    env_file:
-      - .env
     environment:
+      - ENVIRONMENT=development
       - REDIS_URL=redis://redis:6379/0
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
     depends_on:

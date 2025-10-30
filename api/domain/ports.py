@@ -31,7 +31,7 @@ class ILlavaClient(ABC):
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from ..schemas import TaskStatus, SpriteAnalysisResult
+from ..schemas import TaskStatus
 
 class ICeleryClient(ABC):
     @abstractmethod
