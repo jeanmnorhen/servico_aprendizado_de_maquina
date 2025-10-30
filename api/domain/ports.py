@@ -74,3 +74,9 @@ class IChatRepository(ABC):
     def get_by_session_id(self, session_id: str) -> List[ChatHistory]:
         pass
 
+
+class ITextGenerator(ABC):
+    @abstractmethod
+    def generate_text(self, prompt: str, model: str) -> str:
+        pass
+

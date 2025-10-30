@@ -3,9 +3,9 @@ from pathlib import Path
 import google.generativeai as genai
 from PIL import Image
 
-from ..domain.ports import IGeminiClient
+from ..domain.ports import ITextGenerator, IGeminiClient # Implement both for now
 
-class GeminiClient(IGeminiClient):
+class GeminiClient(ITextGenerator, IGeminiClient):
     def __init__(self):
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
@@ -17,7 +17,8 @@ class GeminiClient(IGeminiClient):
         # Model for vision (image analysis)
         self.vision_model = genai.GenerativeModel('gemini-pro-vision')
 
-    def generate_text(self, prompt: str) -> str:
+    def generate_text(self, prompt: str, model: str = 'gemini-1.5-flash-latest') -> str:
+        # The 'model' parameter is for interface compatibility, but this client uses its configured model.
         try:
             response = self.text_model.generate_content(prompt)
             return response.text

@@ -25,12 +25,7 @@ from ..domain.models import (
     GenerateProductDescriptionRequest
 )
 
-from ..domain.ports import ICeleryClient, ILlavaClient, IGeminiClient, IChatRepository # Import new port
-from ..infrastructure.celery_client import CeleryClient
-from ..infrastructure.file_storage import LocalFileStorage
-from ..infrastructure.llava_client import LlavaClient
-from ..infrastructure.gemini_client import GeminiClient # Import new client
-from ..infrastructure.database.postgres_repository import PostgresChatRepository # Import repository implementation
+from ..infrastructure.model_factory import ModelFactory # Import the factory
 
 from config.celery_config import celery_app # Import the global celery_app
 
@@ -81,15 +76,16 @@ def get_llava_client() -> LlavaClient:
 
     return LlavaClient()
 
-def get_gemini_client() -> IGeminiClient: # Add dependency injector for Gemini
-    return GeminiClient()
-
 def get_chat_repository() -> IChatRepository: # Add dependency injector for Repository
     return PostgresChatRepository()
+
+def get_model_factory() -> ModelFactory: # Add dependency injector for Factory
+    return ModelFactory()
 
 # --- Request Models ---
 class GenerateTextRequest(BaseModel):
     prompt: str
+    model: str # Add model field
     session_id: Optional[str] = None
 
 # --- API Endpoints ---
@@ -198,14 +194,14 @@ async def generate_product_description_endpoint(
 async def generate_text_endpoint(
     request: GenerateTextRequest,
     api_key: str = Depends(get_api_key),
-    gemini_client: IGeminiClient = Depends(get_gemini_client),
+    model_factory: ModelFactory = Depends(get_model_factory),
     chat_repo: IChatRepository = Depends(get_chat_repository)
 ):
     """
-    Generates text using the Gemini Pro model.
+    Generates text using a specified model (e.g., 'gemini', 'codellama').
     """
-    use_case = GenerateTextUseCase(gemini_client, chat_repo)
-    result = use_case.execute(request.prompt, request.session_id)
+    use_case = GenerateTextUseCase(model_factory, chat_repo)
+    result = use_case.execute(request.prompt, request.model, request.session_id)
     if result["status"] == "FAILURE":
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=result["error"])
     return result
