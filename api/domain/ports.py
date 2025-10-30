@@ -52,3 +52,13 @@ class ILlavaClient(ABC):
     def analyze_image(self, image_path: str, prompt: str, model: str = "llava") -> dict:
         pass
 
+
+class IGeminiClient(ABC):
+    @abstractmethod
+    def generate_text(self, prompt: str) -> str:
+        pass
+
+    @abstractmethod
+    def analyze_image(self, image_path: str, prompt: str) -> str:
+        pass
+

@@ -16,3 +16,4 @@ pytest-cov
 requests
 supabase
 llama-cpp-python
+google-genai
