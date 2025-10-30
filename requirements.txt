@@ -14,6 +14,11 @@ pytest
 pytest-mock
 pytest-cov
 requests
-supabase
+
 llama-cpp-python
 google-genai
+
+supabase
+sqlalchemy
+psycopg2-binary
+pyngrok

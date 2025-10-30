@@ -16,3 +16,11 @@ class TaskStatus(BaseModel):
     error: Optional[str] = None
 
 
+
+# --- Persistence --- #
+
+class ChatHistory(BaseModel):
+    session_id: str
+    human_message: str
+    ai_message: str
+

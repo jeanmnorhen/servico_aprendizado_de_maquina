@@ -62,3 +62,15 @@ class IGeminiClient(ABC):
     def analyze_image(self, image_path: str, prompt: str) -> str:
         pass
 
+
+from .models import ChatHistory
+
+class IChatRepository(ABC):
+    @abstractmethod
+    def add(self, chat_history: ChatHistory) -> None:
+        pass
+
+    @abstractmethod
+    def get_by_session_id(self, session_id: str) -> List[ChatHistory]:
+        pass
+
