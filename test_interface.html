@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Service Test Interface</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        #chat-form {
+            display: flex;
+            gap: 8px;
+        }
+        #prompt-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        #submit-button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            background-color: #1877f2;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #submit-button:disabled {
+            background-color: #a0bdf5;
+            cursor: not-allowed;
+        }
+        #submit-button:hover:not(:disabled) {
+            background-color: #166fe5;
+        }
+        .response-area {
+            margin-top: 24px;
+            padding: 16px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            background-color: #f7f8fa;
+            min-height: 100px;
+            white-space: pre-wrap; /* Preserve whitespace and newlines */
+        }
+        .session-info {
+            margin-top: 16px;
+            font-size: 14px;
+            color: #606770;
+            text-align: center;
+        }
+        .error-message {
+            color: #fa383e;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>AI Service Test Interface</h1>
+        
+        <form id="chat-form">
+            <input type="text" id="prompt-input" placeholder="Enter your prompt here..." autocomplete="off">
+            <button type="submit" id="submit-button">Send</button>
+        </form>
+
+        <div class="session-info">
+            <strong>Session ID:</strong> <span id="session-id-display">None</span>
+        </div>
+
+        <h3>AI Response:</h3>
+        <div id="response-display" class="response-area">...</div>
+
+        <div id="error-display" class="error-message"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('chat-form');
+        const input = document.getElementById('prompt-input');
+        const submitButton = document.getElementById('submit-button');
+        const responseDisplay = document.getElementById('response-display');
+        const sessionIdDisplay = document.getElementById('session-id-display');
+        const errorDisplay = document.getElementById('error-display');
+
+        // --- Configuration ---
+        const API_URL = 'http://localhost:8000/api/ai/generate-text';
+        const API_KEY = 'my-super-secret-key';
+        // ---------------------
+
+        let currentSessionId = null;
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const prompt = input.value.trim();
+            if (!prompt) return;
+
+            setLoading(true);
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-KEY': API_KEY
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        session_id: currentSessionId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'An unknown error occurred.');
+                }
+
+                // Update UI with the response
+                responseDisplay.textContent = data.result;
+                currentSessionId = data.session_id;
+                sessionIdDisplay.textContent = currentSessionId;
+                errorDisplay.textContent = ''; // Clear previous errors
+
+            } catch (error) {
+                console.error('Error:', error);
+                responseDisplay.textContent = '...';
+                errorDisplay.textContent = `Error: ${error.message}`;
+            } finally {
+                setLoading(false);
+                input.value = ''; // Clear input field
+            }
+        });
+
+        function setLoading(isLoading) {
+            submitButton.disabled = isLoading;
+            if (isLoading) {
+                responseDisplay.textContent = 'Generating response...';
+                errorDisplay.textContent = '';
+            } 
+        }
+    </script>
+
+</body>
+</html>
