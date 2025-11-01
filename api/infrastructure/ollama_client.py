@@ -1,38 +1,25 @@
-import requests
-import json
+import os
+import ollama # Import the official ollama library
 
 from ..domain.ports import ITextGenerator
 
 class OllamaClient(ITextGenerator):
     def __init__(self):
-        self.api_url = "http://ollama:11434"
+        self.api_url = os.environ.get("OLLAMA_API_URL", "http://ollama:11434")
+        self.client = ollama.Client(host=self.api_url) # Initialize the official client
 
-    def generate_text(self, prompt: str, model: str) -> str:
+    def generate_text(self, prompt: str, model: str = "gemma:2b") -> str:
         """Generates text using the Ollama API with a specified model."""
-        payload = {
-            "model": model,
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
-            "stream": False
-        }
-
         try:
-            response = requests.post(
-                f"{self.api_url}/api/chat",
-                json=payload,
-                headers={"Content-Type": "application/json"}
+            response = self.client.chat(
+                model=model,
+                messages=[{'role': 'user', 'content': prompt}],
+                stream=False
             )
-            response.raise_for_status()
-            
-            lines = response.text.strip().split('\n')
-            last_line = json.loads(lines[-1])
-            
-            return last_line.get("message", {}).get("content", "")
-        except requests.exceptions.RequestException as e:
+            return response['message']['content']
+        except ollama.ResponseError as e:
             print(f"Error calling Ollama API: {e}")
             raise RuntimeError(f"Failed to generate text with Ollama model {model}: {e}")
-        except json.JSONDecodeError as e:
-            print(f"Error decoding Ollama response: {e}")
-            raise RuntimeError(f"Failed to decode Ollama response: {response.text}")
-
+        except Exception as e:
+            print(f"Error during Ollama text generation: {e}")
+            raise RuntimeError(f"Failed to generate text with Ollama model {model}: {e}")

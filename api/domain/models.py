@@ -24,3 +24,7 @@ class ChatHistory(BaseModel):
     human_message: str
     ai_message: str
 
+class GenerateProductDescriptionRequest(BaseModel):
+    product_name: str
+    description_length: Optional[int] = 100
+

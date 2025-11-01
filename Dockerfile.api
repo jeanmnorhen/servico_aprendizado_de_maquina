@@ -1,23 +1,26 @@
 # Dockerfile.api
-FROM python:3.11-slim
+FROM python:3.11-bullseye
 
 # Install build tools needed for llama-cpp-python compilation
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Install dependencies
+RUN pip install --upgrade pip
+RUN pip install psycopg2
 COPY requirements.txt .
-# First, install the build dependencies for llama-cpp-python with a long timeout
-RUN pip install --timeout=600 cmake ninja
-
-# Now, install the rest of the requirements
-RUN pip install --timeout=600 --no-cache-dir -r requirements.txt
+RUN pip install --timeout=600 -r requirements.txt
 
 # Copy application code
+RUN rm -rf /app/api/infrastructure/gemini_image_client.py # Forçar remoção do arquivo antigo
 COPY api /app/api
 COPY config /app/config
 COPY workers /app/workers
+COPY tests /app/tests
+
+# Create directory for generated images
+RUN mkdir -p /app/generated_images
 
 EXPOSE 8000
 

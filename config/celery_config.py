@@ -16,9 +16,7 @@ celery_app.conf.task_queues = (
 )
 
 celery_app.conf.task_routes = {
-    'workers.text_worker.process_animation_script': {'queue': 'text_queue', 'routing_key': 'text_task'},
     'workers.text_worker.generate_product_description': {'queue': 'text_queue', 'routing_key': 'text_task'},
-    'workers.vision_worker.monitor_sprites_directory': {'queue': 'vision_queue', 'routing_key': 'vision_task'},
     'workers.vision_worker.process_product_image': {'queue': 'vision_queue', 'routing_key': 'vision_task'},
 }
 
@@ -29,11 +27,6 @@ celery_app.conf.update(
     timezone='UTC',
     enable_utc=True,
     beat_schedule={
-        'monitor-sprites-every-30-seconds': {
-            'task': 'workers.vision_worker.monitor_sprites_directory',
-            'schedule': 30.0,
-            'args': (),
-        },
     },
 )
 

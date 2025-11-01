@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Install essential build tools if any C extensions need compilation
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
+    build-essential libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip

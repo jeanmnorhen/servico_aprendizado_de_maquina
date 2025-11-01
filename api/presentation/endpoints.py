@@ -10,6 +10,10 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Securit
 
 from fastapi.security import APIKeyHeader
 
+from ..infrastructure.celery_client import CeleryClient
+from ..infrastructure.file_storage import LocalFileStorage
+from ..infrastructure.llava_client import LlavaClient # Import LlavaClient
+
 
 
 from ..application.use_cases import (
@@ -24,6 +28,9 @@ from ..domain.models import (
     TaskStatus,
     GenerateProductDescriptionRequest
 )
+from ..domain.ports import IChatRepository # Import IChatRepository
+from ..domain.ports import ICeleryClient # Import ICeleryClient
+from ..infrastructure.database.postgres_repository import PostgresChatRepository # Import PostgresChatRepository
 
 from ..infrastructure.model_factory import ModelFactory # Import the factory
 
@@ -173,6 +180,22 @@ def health_check():
     return {"status": "ok"}
 
 
+
+from ..application.use_cases import ProcessCatalogIntakeUseCase # Import the new use case
+
+@router.post("/api/ai/catalog-intake", response_model=TaskTicket, status_code=status.HTTP_202_ACCEPTED)
+async def catalog_intake_endpoint(
+    file: UploadFile = File(...),
+    project_id: Optional[str] = Form(None),
+    api_key: str = Depends(get_api_key),
+    celery_client: ICeleryClient = Depends(get_celery_client),
+    file_storage: LocalFileStorage = Depends(get_file_storage)
+):
+    """
+    Receives a catalog file, saves it, and dispatches a task to process it.
+    """
+    use_case = ProcessCatalogIntakeUseCase(celery_client, file_storage)
+    return use_case.execute(file.file, file.filename, project_id)
 
 @router.post("/api/ai/generate-product-description", response_model=TaskTicket, status_code=status.HTTP_202_ACCEPTED)
 

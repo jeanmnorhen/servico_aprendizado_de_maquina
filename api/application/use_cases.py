@@ -3,7 +3,7 @@ import json
 from pydantic import ValidationError
 
 from ..domain.ports import ICeleryClient, IFileStorage, ILlavaClient
-from ..domain.models import TaskTicket, TaskStatus, GenerateProductDescriptionRequest
+from ..schemas import TaskTicket, TaskStatus, GenerateProductDescriptionRequest
 
 class TestTextWorkerUseCase:
     def __init__(self, celery_client: ICeleryClient):

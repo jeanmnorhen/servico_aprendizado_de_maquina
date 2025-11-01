@@ -1,6 +1,7 @@
 # D:\Oficina\servico-ia-unificado\api\main.py
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from .presentation import endpoints
 import os
 import uvicorn
@@ -29,6 +30,14 @@ app = FastAPI(
     version="0.1.0"
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permitir todas as origens por enquanto para facilitar o desenvolvimento
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Mount static files directory for generated images
 app.mount("/generated_images", StaticFiles(directory="generated_images"), name="generated_images")
 
@@ -43,5 +52,5 @@ async def shutdown_event():
     print("API is shutting down...")
     # Disconnect Ngrok tunnel if it's running
     if os.environ.get("ENVIRONMENT") == "development" and os.environ.get("NGROK_AUTHTOKEN"):
-        ngrok.disconnect_all()
+        ngrok.kill()
         print("Ngrok tunnels disconnected.")
